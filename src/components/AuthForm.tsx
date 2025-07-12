@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { AlertCircle, Mail, Lock, User, ArrowRight, ArrowLeft } from 'lucide-react';
+import { AlertCircle, Mail, Lock, User, ArrowRight, ArrowLeft, Check, X } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   createUserWithEmailAndPassword, 
@@ -27,6 +27,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onAuth }) => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    confirmPassword: '',
     username: ''
   });
   const [errors, setErrors] = useState<string>('');
@@ -42,6 +43,24 @@ const AuthForm: React.FC<AuthFormProps> = ({ onAuth }) => {
     setErrors('');
   };
 
+  // دوال التحقق من قوة كلمة المرور
+  const getPasswordRequirements = () => {
+    return [
+      {
+        text: 'على الأقل 6 أحرف',
+        met: formData.password.length >= 6
+      },
+      {
+        text: 'يحتوي على رقم',
+        met: /\d/.test(formData.password)
+      },
+      {
+        text: 'يحتوي على رمز خاص',
+        met: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.password)
+      }
+    ];
+  };
+
   const validateForm = () => {
     if (!formData.email) {
       setErrors('يرجى إدخال البريد الإلكتروني');
@@ -51,9 +70,25 @@ const AuthForm: React.FC<AuthFormProps> = ({ onAuth }) => {
       setErrors('يرجى إدخال كلمة المرور');
       return false;
     }
-    if (currentForm === 'register' && !formData.username) {
-      setErrors('يرجى إدخال اسم المستخدم');
-      return false;
+    if (currentForm === 'register') {
+      if (!formData.username) {
+        setErrors('يرجى إدخال اسم المستخدم');
+        return false;
+      }
+      
+      // التحقق من قوة كلمة المرور
+      const requirements = getPasswordRequirements();
+      const unmetRequirements = requirements.filter(req => !req.met);
+      if (unmetRequirements.length > 0) {
+        setErrors('كلمة المرور لا تلبي جميع المتطلبات');
+        return false;
+      }
+      
+      // التحقق من تطابق كلمة المرور
+      if (formData.password !== formData.confirmPassword) {
+        setErrors('كلمة المرور وتأكيدها غير متطابقتين');
+        return false;
+      }
     }
     return true;
   };
@@ -242,6 +277,63 @@ const AuthForm: React.FC<AuthFormProps> = ({ onAuth }) => {
                   className="form-input text-right"
                   dir="rtl"
                 />
+                
+                {/* عرض متطلبات كلمة المرور للتسجيل */}
+                {currentForm === 'register' && formData.password && (
+                  <div className="mt-3 p-3 bg-muted/50 rounded-lg">
+                    <p className="text-sm font-medium mb-2 text-right">متطلبات كلمة المرور:</p>
+                    <div className="space-y-1">
+                      {getPasswordRequirements().map((requirement, index) => (
+                        <div key={index} className="flex items-center gap-2 text-sm text-right">
+                          {requirement.met ? (
+                            <Check className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <X className="h-4 w-4 text-red-500" />
+                          )}
+                          <span className={requirement.met ? 'text-green-700' : 'text-muted-foreground'}>
+                            {requirement.text}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* خانة تأكيد كلمة المرور للتسجيل فقط */}
+            {currentForm === 'register' && (
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword" className="text-right flex items-center gap-2">
+                  <Lock className="h-4 w-4" />
+                  تأكيد كلمة المرور
+                </Label>
+                <Input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  placeholder="أعد إدخال كلمة المرور"
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
+                  className="form-input text-right"
+                  dir="rtl"
+                />
+                {/* إشارة تطابق كلمة المرور */}
+                {formData.confirmPassword && (
+                  <div className="flex items-center gap-2 text-sm text-right">
+                    {formData.password === formData.confirmPassword ? (
+                      <>
+                        <Check className="h-4 w-4 text-green-600" />
+                        <span className="text-green-700">كلمتا المرور متطابقتان</span>
+                      </>
+                    ) : (
+                      <>
+                        <X className="h-4 w-4 text-red-500" />
+                        <span className="text-red-500">كلمتا المرور غير متطابقتين</span>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
