@@ -18,11 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 
 type FormType = 'login' | 'register' | 'reset';
 
-interface AuthFormProps {
-  onAuth?: (success: boolean) => void;
-}
-
-const AuthForm: React.FC<AuthFormProps> = ({ onAuth }) => {
+const AuthForm: React.FC = () => {
   const [currentForm, setCurrentForm] = useState<FormType>('login');
   const [formData, setFormData] = useState({
     email: '',
@@ -133,10 +129,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ onAuth }) => {
           description: "جاري التوجيه إلى الموقع...",
         });
         
-        // إعادة التوجيه إلى الموقع المطلوب
-        setTimeout(() => {
-          window.location.href = "https://laithqarqaz1.github.io/laith2game/";
-        }, 1500);
+        // إعادة التوجيه المباشر إلى الموقع المطلوب بدون تأخير
+        window.location.href = "https://laithqarqaz1.github.io/laith2game/";
 
       } else if (currentForm === 'register') {
         // إنشاء حساب جديد
