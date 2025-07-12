@@ -1,24 +1,44 @@
-import { useState } from 'react';
+import React from 'react';
 import AuthForm from '@/components/AuthForm';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogOut, User, Settings } from 'lucide-react';
+import { LogOut, User, Settings, Loader } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { signOut } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { user, loading } = useAuth();
+  const { toast } = useToast();
 
-  const handleAuth = (success: boolean) => {
-    if (success) {
-      setIsAuthenticated(true);
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      toast({
+        title: "تم تسجيل الخروج",
+        description: "إلى اللقاء!",
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
     }
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-  };
+  // عرض شاشة التحميل أثناء فحص حالة المصادقة
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" 
+           style={{ background: 'var(--gradient-secondary)' }}>
+        <div className="text-center">
+          <Loader className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+          <p className="text-lg text-muted-foreground">جاري التحميل...</p>
+        </div>
+      </div>
+    );
+  }
 
-  if (!isAuthenticated) {
-    return <AuthForm onAuth={handleAuth} />;
+  if (!user) {
+    return <AuthForm onAuth={() => {}} />;
   }
 
   return (
@@ -34,7 +54,7 @@ const Index = () => {
                   </div>
                   <div>
                     <CardTitle className="text-xl">مرحباً بك</CardTitle>
-                    <p className="text-muted-foreground">لوحة التحكم الرئيسية</p>
+                    <p className="text-muted-foreground">{user.email}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">

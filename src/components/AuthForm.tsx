@@ -5,6 +5,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AlertCircle, Mail, Lock, User, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  sendPasswordResetEmail,
+  sendEmailVerification,
+  signOut
+} from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
+import { useToast } from '@/hooks/use-toast';
 
 type FormType = 'login' | 'register' | 'reset';
 
@@ -22,6 +32,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onAuth }) => {
   const [errors, setErrors] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const { toast } = useToast();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -47,24 +58,88 @@ const AuthForm: React.FC<AuthFormProps> = ({ onAuth }) => {
     return true;
   };
 
+  const translateFirebaseError = (errorCode: string): string => {
+    const errors: { [key: string]: string } = {
+      'auth/invalid-email': 'البريد الإلكتروني غير صالح',
+      'auth/user-disabled': 'تم تعطيل الحساب',
+      'auth/user-not-found': 'المستخدم غير موجود',
+      'auth/wrong-password': 'كلمة المرور غير صحيحة',
+      'auth/email-already-in-use': 'البريد الإلكتروني مستخدم من قبل',
+      'auth/weak-password': 'كلمة المرور ضعيفة جداً',
+      'auth/operation-not-allowed': 'العملية غير مسموحة',
+      'auth/invalid-credential': 'بيانات الدخول غير صحيحة',
+      'auth/too-many-requests': 'كثرة المحاولات، يرجى المحاولة لاحقاً',
+      'auth/network-request-failed': 'خطأ في الشبكة، تحقق من الاتصال'
+    };
+    return errors[errorCode] || 'حدث خطأ أثناء العملية';
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
 
     setLoading(true);
     setErrors('');
+    setSuccessMessage('');
 
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
-      if (currentForm === 'reset') {
-        setSuccessMessage('تم إرسال رابط استعادة كلمة المرور إلى بريدك الإلكتروني');
-      } else if (currentForm === 'register') {
-        setSuccessMessage('تم إنشاء الحساب بنجاح! يرجى التحقق من بريدك الإلكتروني');
-      } else {
+    try {
+      if (currentForm === 'login') {
+        // تسجيل الدخول
+        const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
+        
+        if (!userCredential.user.emailVerified) {
+          await signOut(auth);
+          setErrors('يرجى تأكيد البريد الإلكتروني أولاً');
+          return;
+        }
+
+        toast({
+          title: "تم تسجيل الدخول بنجاح",
+          description: "أهلاً بك مرة أخرى!",
+        });
         onAuth?.(true);
+
+      } else if (currentForm === 'register') {
+        // إنشاء حساب جديد
+        const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+        
+        // حفظ بيانات المستخدم في Firestore
+        await setDoc(doc(db, 'users', userCredential.user.uid), {
+          username: formData.username,
+          email: formData.email,
+          balance: 0,
+          useruid: userCredential.user.uid,
+          createdAt: new Date().toISOString()
+        });
+
+        // إرسال رابط تفعيل البريد الإلكتروني
+        await sendEmailVerification(userCredential.user);
+        await signOut(auth);
+
+        setSuccessMessage('تم إنشاء الحساب بنجاح! تم إرسال رابط التفعيل إلى بريدك الإلكتروني');
+        
+        toast({
+          title: "تم إنشاء الحساب",
+          description: "يرجى تفعيل البريد الإلكتروني",
+        });
+
+      } else if (currentForm === 'reset') {
+        // استعادة كلمة المرور
+        await sendPasswordResetEmail(auth, formData.email);
+        setSuccessMessage('تم إرسال رابط استعادة كلمة المرور إلى بريدك الإلكتروني');
+        
+        toast({
+          title: "تم إرسال الرابط",
+          description: "تحقق من بريدك الإلكتروني",
+        });
       }
-    }, 1500);
+
+    } catch (error: any) {
+      console.error('Authentication error:', error);
+      setErrors(translateFirebaseError(error.code));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getFormTitle = () => {
