@@ -130,9 +130,13 @@ const AuthForm: React.FC<AuthFormProps> = ({ onAuth }) => {
 
         toast({
           title: "تم تسجيل الدخول بنجاح",
-          description: "أهلاً بك مرة أخرى!",
+          description: "جاري التوجيه إلى الموقع...",
         });
-        onAuth?.(true);
+        
+        // إعادة التوجيه إلى الموقع المطلوب
+        setTimeout(() => {
+          window.location.href = "https://laithqarqaz1.github.io/laith2game/";
+        }, 1500);
 
       } else if (currentForm === 'register') {
         // إنشاء حساب جديد
