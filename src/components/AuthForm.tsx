@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { AlertCircle, Mail, Lock, User, ArrowRight, ArrowLeft, Check, X } from 'lucide-react';
+import { AlertCircle, Mail, Lock, User, ArrowRight, ArrowLeft, Check, X, Eye, EyeOff } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   createUserWithEmailAndPassword, 
@@ -29,6 +29,8 @@ const AuthForm: React.FC = () => {
   const [errors, setErrors] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { toast } = useToast();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -265,16 +267,29 @@ const AuthForm: React.FC = () => {
                   <Lock className="h-4 w-4" />
                   كلمة المرور
                 </Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  placeholder="أدخل كلمة المرور"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  className="form-input text-right"
-                  dir="rtl"
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="أدخل كلمة المرور"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    className="form-input text-right pr-12"
+                    dir="rtl"
+                  />
+                  <button
+                    type="button"
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
                 
                 {/* عرض متطلبات كلمة المرور للتسجيل */}
                 {currentForm === 'register' && formData.password && (
@@ -306,16 +321,29 @@ const AuthForm: React.FC = () => {
                   <Lock className="h-4 w-4" />
                   تأكيد كلمة المرور
                 </Label>
-                <Input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  placeholder="أعد إدخال كلمة المرور"
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange}
-                  className="form-input text-right"
-                  dir="rtl"
-                />
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="أعد إدخال كلمة المرور"
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    className="form-input text-right pr-12"
+                    dir="rtl"
+                  />
+                  <button
+                    type="button"
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
                 {/* إشارة تطابق كلمة المرور */}
                 {formData.confirmPassword && (
                   <div className="flex items-center gap-2 text-sm text-right">
